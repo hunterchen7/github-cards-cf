@@ -1,0 +1,5 @@
+# Copy to `.dev.vars` (gitignored) for local `wrangler dev`.
+# A GitHub Personal Access Token used to read PUBLIC profile/repo data.
+#   - Classic token scopes: read:user, public_repo
+#   - or a fine-grained token with read-only access to public repositories + profile
+GITHUB_TOKEN="ghp_your_token_here"

@@ -1,0 +1,42 @@
+# Cloudflare Workers config for github-cards-cf.
+#
+# Setup (one time):
+#   1. npm install
+#   2. npx wrangler kv namespace create CARDS_KV
+#      -> copy the returned `id` into [[kv_namespaces]] below.
+#   3. npx wrangler secret put GITHUB_TOKEN
+#      -> paste a GitHub PAT (classic: read:user, public_repo; or a fine-grained
+#         token with read access to public profile + repositories). Only public
+#         data is read.
+#   4. npm run deploy
+#
+# Local dev: put GITHUB_TOKEN in a .dev.vars file (see .dev.vars.example) and run
+# `npm run dev`. Wrangler provides a local KV simulation automatically.
+
+name = "github-cards-cf"
+main = "src/index.ts"
+compatibility_date = "2024-11-06"
+
+# Tunables (non-secret). Overridable per-environment.
+[vars]
+# How long a cached per-user data blob is considered "fresh" before we try to
+# refetch from GitHub (seconds). On refetch failure we still serve the stale
+# blob — that is the API-failure resilience. Default: 6 hours.
+CACHE_FRESH_SECONDS = "21600"
+# How long the browser / GitHub camo proxy may cache the rendered SVG (seconds).
+BROWSER_CACHE_SECONDS = "14400"
+# How long a rendered SVG lives in the Cloudflare edge Cache API (seconds).
+EDGE_CACHE_SECONDS = "14400"
+
+# Persistent last-known-good cache. Run the `wrangler kv namespace create`
+# command above and paste the id here. `preview_id` is used by `wrangler dev`.
+[[kv_namespaces]]
+binding = "CARDS_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+# preview_id = "REPLACE_WITH_KV_PREVIEW_ID"
+
+[observability]
+enabled = true
+
+[placement]
+mode = "smart"
