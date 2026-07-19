@@ -93,6 +93,7 @@ async function renderSummaryCard(card: string, url: URL, env: Env): Promise<Rend
   return {
     svg: animate(renderMostCommitLanguage(res.data, exclude, excludeRepos, themeName, override)),
     source: res.source,
+    ageSeconds: res.ageSeconds,
   };
 }
 
