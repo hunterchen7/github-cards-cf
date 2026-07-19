@@ -70,12 +70,17 @@ The public instances of these projects go down or rate-limit, and the card in yo
 
 The language cards (`top-langs`, `repos-per-language`, `most-commit-language`) can count your **private** repos, not just public ones. Two things control this:
 
-1. **The token must be able to see private repos.** This is the important one:
-   - A **classic token with the `repo` scope** exposes private repos to GitHub's GraphQL API. ✅
-   - A **fine-grained token exposes _public repos only_** to the `repositories` GraphQL query — even with "All repositories" selected. So private repos will silently not appear. ⚠️
+1. **The token must be able to see private repos:**
+   - A **fine-grained token** with **Repository access → All repositories** and **Repository permissions → Metadata: Read** (plus **Contents: Read** for languages) exposes your private repos to the language queries. ✅
+   - A **classic token with the `repo` scope** also works. ✅
+   - A fine-grained token missing those repo permissions, or a no-scope classic token, sees public repos only.
 2. **The `include_private` toggle** decides whether to *count* them once the token can see them:
    - Default is the `INCLUDE_PRIVATE` env var (`wrangler.toml`); override per request with `?include_private=false` / `=true`.
    - `include_private=false` renders **public-only** language stats.
+
+> Caching gotcha: because the per-user data blob is cached for `CACHE_FRESH_SECONDS` (1h), changing the token's permissions won't take effect until the blob refreshes. Force it with `wrangler kv key delete "data:v1:repos:<user>" --namespace-id <id>` (and `:profile:` / `:commitLangs:`).
+
+> The **contribution count** (profile-details "X Contributions" + the graph) is separate: it comes from GitHub's contribution *calendar*, whose private inclusion is governed by **Settings → Public profile → "Include private contributions on my profile"** and is reliably included by a classic `repo` token. A fine-grained token can under-report private contributions there even though it lists private repos fine.
 
 How it works internally: every fetch pulls **all** repos the token can see, each tagged with an `isPrivate` flag, and caches that superset in KV. The public/private filter is applied at **render time**, so toggling `include_private` never triggers a re-fetch — it recomputes from the cached data (see [Architecture](#architecture)).
 
@@ -127,7 +132,7 @@ You need a Cloudflare account and Node.js 20+.
 
 3. Copy the returned `id` into `wrangler.toml`, at `[[kv_namespaces]]` → `id`.
 
-4. Add a GitHub token as a secret. GitHub's GraphQL API requires authentication even for public data, so **any valid classic PAT works — no scopes needed** for public stats. Add the `read:user` scope for the email row on profile-details, and use a classic token with the **`repo`** scope if you want the language cards to count **private** repos (see [Private repositories](#private-repositories) — fine-grained tokens only expose public repos to GraphQL).
+4. Add a GitHub token as a secret. GitHub's GraphQL API requires authentication even for public data, so **any valid classic PAT works — no scopes needed** for public stats. For **private** repos in the language cards, use a fine-grained token (All repositories + Metadata/Contents read) or a classic `repo` token; for the **email** row add `read:user` (classic) or Email addresses read (fine-grained). See [Private repositories](#private-repositories).
 
    ```
    npx wrangler secret put GITHUB_TOKEN
