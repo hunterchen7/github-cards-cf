@@ -44,6 +44,7 @@ The public instances of these projects go down or rate-limit, and the card in yo
 | `hide_logo` | stats | `false` | hide the large GitHub logo |
 | `exclude` | language cards | — | comma list of languages to hide (aliases like `js`, `ts` are resolved) |
 | `exclude_repos` | language cards | — | comma list of repo names / `owner/repo` to skip |
+| `include_private` | language cards | `INCLUDE_PRIVATE` env | count private repos in the language stats — see [Private repositories](#private-repositories) |
 | `animation` | all | — | entrance animation: `fade`, `rise`, `draw`, `stagger`, `load`, `sequence`, `tint`, `rgb`, `rgb-soft` (pure CSS, camo-safe; respects `prefers-reduced-motion`) |
 | `duration` | all | preset default | animation speed in seconds (0.2–10) |
 
@@ -59,10 +60,28 @@ The public instances of these projects go down or rate-limit, and the card in yo
 | `title_color`, `text_color`, `bg_color`, `border_color` | theme | bare hex (no `#` needed) |
 | `hide_title`, `hide_border`, `hide_progress`, `disable_animations` | `false` | booleans |
 | `exclude_repo` | — | comma list of repo names to skip |
+| `include_private` | `INCLUDE_PRIVATE` env | count private repos — see [Private repositories](#private-repositories) |
 | `custom_title` | "Most Used Languages" | override the title |
 | `stats_format` | `percentages` | or `bytes` |
 
 > Note: `show_icons` / `icon_color` have no effect on top-langs (they are ignored upstream too).
+
+## Private repositories
+
+The language cards (`top-langs`, `repos-per-language`, `most-commit-language`) can count your **private** repos, not just public ones. Two things control this:
+
+1. **The token must be able to see private repos.** This is the important one:
+   - A **classic token with the `repo` scope** exposes private repos to GitHub's GraphQL API. ✅
+   - A **fine-grained token exposes _public repos only_** to the `repositories` GraphQL query — even with "All repositories" selected. So private repos will silently not appear. ⚠️
+2. **The `include_private` toggle** decides whether to *count* them once the token can see them:
+   - Default is the `INCLUDE_PRIVATE` env var (`wrangler.toml`); override per request with `?include_private=false` / `=true`.
+   - `include_private=false` renders **public-only** language stats.
+
+How it works internally: every fetch pulls **all** repos the token can see, each tagged with an `isPrivate` flag, and caches that superset in KV. The public/private filter is applied at **render time**, so toggling `include_private` never triggers a re-fetch — it recomputes from the cached data (see [Architecture](#architecture)).
+
+Privacy note: private repo names + language sizes are cached in **your** Workers KV (server-side, never returned by any endpoint). The rendered card only ever shows **aggregate language percentages** — no repo names. Still, be aware that a public profile card built with `include_private=true` reveals the *proportions* of languages you use in private work.
+
+> The profile-details "Public Repos" count and the stats "Total Stars" remain **public-only** regardless of this toggle (their labels say "Public").
 
 ## Architecture
 
@@ -108,7 +127,7 @@ You need a Cloudflare account and Node.js 20+.
 
 3. Copy the returned `id` into `wrangler.toml`, at `[[kv_namespaces]]` → `id`.
 
-4. Add a GitHub token as a secret. GitHub's GraphQL API requires authentication even for public data, so **any valid classic PAT works — no scopes needed**. Add the `read:user` scope only if you want the email row on the profile-details card (that one field is scope-gated by GitHub even though it's public). The Worker reads only public data.
+4. Add a GitHub token as a secret. GitHub's GraphQL API requires authentication even for public data, so **any valid classic PAT works — no scopes needed** for public stats. Add the `read:user` scope for the email row on profile-details, and use a classic token with the **`repo`** scope if you want the language cards to count **private** repos (see [Private repositories](#private-repositories) — fine-grained tokens only expose public repos to GraphQL).
 
    ```
    npx wrangler secret put GITHUB_TOKEN
@@ -158,6 +177,7 @@ Set these in `wrangler.toml` under `[vars]`:
 | `BROWSER_CACHE_SECONDS` | `3600` (1h) | `max-age` sent to the browser / GitHub camo proxy |
 | `EDGE_CACHE_SECONDS` | `3600` (1h) | edge Cache API TTL (`s-maxage`) |
 | `EXCLUDE_REPO` | — | optional comma list of repos to exclude globally |
+| `INCLUDE_PRIVATE` | `false` | default for counting private repos in the language cards ([details](#private-repositories)) |
 
 ## License
 

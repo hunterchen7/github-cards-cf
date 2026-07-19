@@ -68,3 +68,19 @@ describe('aggregateTopLanguages', () => {
     expect(top['TypeScript']).toBeUndefined();
   });
 });
+
+describe('include_private toggle (public/all filtering)', () => {
+  it('includes the private Go repo when counting all repos', () => {
+    const all = aggregateTopLanguages(REPOS_FIXTURE, []);
+    expect(all['Go']).toBeDefined();
+  });
+
+  it('drops private repos when filtered to public-only (include_private=false)', () => {
+    const publicOnly = aggregateTopLanguages(
+      REPOS_FIXTURE.filter((r) => !r.isPrivate),
+      [],
+    );
+    expect(publicOnly['Go']).toBeUndefined(); // go-svc is private
+    expect(publicOnly['TypeScript']).toBeDefined();
+  });
+});

@@ -67,11 +67,12 @@ const LANG_META: Record<string, { size: number; color: string }> = {
   Go: { size: 2430, color: '#00ADD8' },
 };
 
-function langRepo(name: string, lang: string): RepoNode {
+function langRepo(name: string, lang: string, isPrivate = false): RepoNode {
   const meta = LANG_META[lang];
   return {
     name,
     nameWithOwner: `hunterchen7/${name}`,
+    isPrivate,
     primaryLanguage: { name: lang, color: meta.color },
     languages: { edges: [{ size: meta.size, node: { name: lang, color: meta.color } }] },
   };
@@ -79,11 +80,12 @@ function langRepo(name: string, lang: string): RepoNode {
 
 // A repo that counts toward repos-per-language (has a primary language) but does
 // not affect top-langs (empty languages edges → skipped by the aggregator).
-function countingRepo(name: string, lang: string): RepoNode {
+function countingRepo(name: string, lang: string, isPrivate = false): RepoNode {
   const meta = LANG_META[lang];
   return {
     name,
     nameWithOwner: `hunterchen7/${name}`,
+    isPrivate,
     primaryLanguage: { name: lang, color: meta.color },
     languages: { edges: [] },
   };
@@ -96,7 +98,7 @@ export const REPOS_FIXTURE: RepoNode[] = [
   langRepo('rust-cli', 'Rust'),
   langRepo('kotlin-app', 'Kotlin'),
   langRepo('c-bits', 'C'),
-  langRepo('go-svc', 'Go'),
+  langRepo('go-svc', 'Go', true), // private → dropped when include_private=false
   // extra repos to give repos-per-language a distribution (TS-heavy)
   countingRepo('ts-app', 'TypeScript'),
   countingRepo('ts-web', 'TypeScript'),
@@ -111,36 +113,42 @@ export const COMMIT_LANGS_FIXTURE: CommitRepoNode[] = [
   {
     name: 'ts-lib',
     nameWithOwner: 'hunterchen7/ts-lib',
+    isPrivate: false,
     primaryLanguage: { name: 'TypeScript', color: '#3178c6' },
     totalCount: 2100,
   },
   {
     name: 'ts-app',
     nameWithOwner: 'hunterchen7/ts-app',
+    isPrivate: false,
     primaryLanguage: { name: 'TypeScript', color: '#3178c6' },
     totalCount: 1100,
   },
   {
     name: 'py-tool',
     nameWithOwner: 'hunterchen7/py-tool',
+    isPrivate: false,
     primaryLanguage: { name: 'Python', color: '#3572A5' },
     totalCount: 1400,
   },
   {
     name: 'rust-cli',
     nameWithOwner: 'hunterchen7/rust-cli',
+    isPrivate: false,
     primaryLanguage: { name: 'Rust', color: '#dea584' },
     totalCount: 600,
   },
   {
     name: 'kotlin-app',
     nameWithOwner: 'hunterchen7/kotlin-app',
+    isPrivate: false,
     primaryLanguage: { name: 'Kotlin', color: '#A97BFF' },
     totalCount: 120,
   },
   {
     name: 'go-svc',
     nameWithOwner: 'hunterchen7/go-svc',
+    isPrivate: true, // private → dropped when include_private=false
     primaryLanguage: { name: 'Go', color: '#00ADD8' },
     totalCount: 80,
   },

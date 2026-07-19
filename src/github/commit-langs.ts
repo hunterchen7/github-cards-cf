@@ -8,6 +8,7 @@ import { githubGraphQL, type GraphQLError } from './client';
 export interface CommitRepoNode {
   name: string;
   nameWithOwner: string;
+  isPrivate: boolean;
   primaryLanguage: { name: string; color: string | null } | null;
   totalCount: number;
 }
@@ -29,6 +30,7 @@ const COMMIT_LANGS_QUERY = `
           repository {
             name
             nameWithOwner
+            isPrivate
             primaryLanguage { name color }
           }
           contributions { totalCount }
@@ -44,6 +46,7 @@ interface CommitLangResponse {
         repository: {
           name: string;
           nameWithOwner: string;
+          isPrivate: boolean;
           primaryLanguage: { name: string; color: string | null } | null;
         };
         contributions: { totalCount: number };
@@ -57,6 +60,7 @@ function toNodes(res: CommitLangResponse): CommitRepoNode[] {
   return byRepo.map((entry) => ({
     name: entry.repository.name,
     nameWithOwner: entry.repository.nameWithOwner,
+    isPrivate: entry.repository.isPrivate,
     primaryLanguage: entry.repository.primaryLanguage,
     totalCount: entry.contributions.totalCount,
   }));

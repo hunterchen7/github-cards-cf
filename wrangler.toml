@@ -29,6 +29,11 @@ CACHE_FRESH_SECONDS = "3600"
 BROWSER_CACHE_SECONDS = "3600"
 # How long a rendered SVG lives in the Cloudflare edge Cache API (seconds). 1 hour.
 EDGE_CACHE_SECONDS = "3600"
+# Default for whether the language cards (top-langs, repos-per-language,
+# most-commit-language) count PRIVATE repos. Only takes effect with a token that
+# can see them (a classic `repo` token — fine-grained tokens expose public repos
+# only to GraphQL). Override per-request with ?include_private=false|true.
+INCLUDE_PRIVATE = "true"
 
 # Persistent last-known-good cache. Run the `wrangler kv namespace create`
 # command above and paste the id here. `preview_id` is used by `wrangler dev`.

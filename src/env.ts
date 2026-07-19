@@ -12,6 +12,13 @@ export interface Env {
   EDGE_CACHE_SECONDS?: string;
   /** Comma-separated repo names/owner-repos excluded globally (optional). */
   EXCLUDE_REPO?: string;
+  /**
+   * Default for whether the language cards count private repos ("true"/"false").
+   * Only has effect with a token that can see private repos (a classic `repo`
+   * token — fine-grained tokens expose public repos only to GraphQL). Overridable
+   * per-request with ?include_private=. Defaults to false.
+   */
+  INCLUDE_PRIVATE?: string;
 }
 
 const DEFAULTS = {
@@ -31,6 +38,8 @@ export interface Config {
   browserCacheSeconds: number;
   edgeCacheSeconds: number;
   excludeRepositories: string[];
+  /** Default for counting private repos in the language cards (see INCLUDE_PRIVATE). */
+  includePrivate: boolean;
 }
 
 export function readConfig(env: Env): Config {
@@ -43,5 +52,6 @@ export function readConfig(env: Env): Config {
           .map((r) => r.trim().toLowerCase())
           .filter(Boolean)
       : [],
+    includePrivate: env.INCLUDE_PRIVATE === 'true',
   };
 }

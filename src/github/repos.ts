@@ -12,6 +12,7 @@ export interface RepoLanguageEdge {
 export interface RepoNode {
   name: string;
   nameWithOwner: string;
+  isPrivate: boolean;
   primaryLanguage: { name: string; color: string | null } | null;
   languages: { edges: RepoLanguageEdge[] };
 }
@@ -26,6 +27,7 @@ const REPOS_QUERY = `
         nodes {
           name
           nameWithOwner
+          isPrivate
           primaryLanguage { name color }
           languages(first: 10, orderBy: { field: SIZE, direction: DESC }) {
             edges {

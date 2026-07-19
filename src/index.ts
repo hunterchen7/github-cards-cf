@@ -79,19 +79,22 @@ async function renderSummaryCard(card: string, url: URL, env: Env): Promise<Rend
   // language cards
   const exclude = parseExcludeLanguages(params.get('exclude') ?? '');
   const excludeRepos = parseExcludeRepos(params, cfg.excludeRepositories);
+  const includePrivate = parseBoolean(params.get('include_private')) ?? cfg.includePrivate;
 
   if (card === 'repos-per-language') {
     const res = await getRepos(env, username);
+    const repos = includePrivate ? res.data : res.data.filter((r) => !r.isPrivate);
     return {
-      svg: animate(renderReposPerLanguage(res.data, exclude, excludeRepos, themeName, override)),
+      svg: animate(renderReposPerLanguage(repos, exclude, excludeRepos, themeName, override)),
       source: res.source,
       ageSeconds: res.ageSeconds,
     };
   }
   // most-commit-language
   const res = await getCommitLangs(env, username);
+  const nodes = includePrivate ? res.data : res.data.filter((n) => !n.isPrivate);
   return {
-    svg: animate(renderMostCommitLanguage(res.data, exclude, excludeRepos, themeName, override)),
+    svg: animate(renderMostCommitLanguage(nodes, exclude, excludeRepos, themeName, override)),
     source: res.source,
     ageSeconds: res.ageSeconds,
   };
@@ -128,8 +131,11 @@ async function renderTopLangsCard(url: URL, env: Env): Promise<RenderResult> {
   const params = url.searchParams;
   const username = requireUsername(params);
   const excludeRepo = parseArray(params.get('exclude_repo'));
+  const includePrivate =
+    parseBoolean(params.get('include_private')) ?? readConfig(env).includePrivate;
   const res = await getRepos(env, username);
-  const topLangs = aggregateTopLanguages(res.data, excludeRepo);
+  const repos = includePrivate ? res.data : res.data.filter((r) => !r.isPrivate);
+  const topLangs = aggregateTopLanguages(repos, excludeRepo);
   return {
     svg: renderTopLanguages(topLangs, parseTopLangsOptions(params)),
     source: res.source,
