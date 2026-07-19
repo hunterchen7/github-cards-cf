@@ -4,3 +4,10 @@
 # PAT works (no scopes needed). Add `read:user` only if you want the email row on
 # the profile-details card.
 GITHUB_TOKEN="ghp_your_token_here"
+
+# Optional: a second token used ONLY for the contribution count + stats. Lets you
+# keep a read-only fine-grained token above (for private repos in the language
+# cards) while using a classic token here for the full private contribution count.
+# With "Include private contributions on my profile" enabled, a classic token with
+# NO scopes is enough here (fully read-only). Falls back to GITHUB_TOKEN if unset.
+# GITHUB_CONTRIB_TOKEN="ghp_classic_no_scope_token_here"

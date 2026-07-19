@@ -80,7 +80,25 @@ The language cards (`top-langs`, `repos-per-language`, `most-commit-language`) c
 
 > Caching gotcha: because the per-user data blob is cached for `CACHE_FRESH_SECONDS` (1h), changing the token's permissions won't take effect until the blob refreshes. Force it with `wrangler kv key delete "data:v1:repos:<user>" --namespace-id <id>` (and `:profile:` / `:commitLangs:`).
 
-> The **contribution count** (profile-details "X Contributions" + the graph) is separate: it comes from GitHub's contribution *calendar*, whose private inclusion is governed by **Settings → Public profile → "Include private contributions on my profile"** and is reliably included by a classic `repo` token. A fine-grained token can under-report private contributions there even though it lists private repos fine.
+> The **contribution count** (profile-details "X Contributions" + the graph) is separate: it comes from GitHub's contribution *calendar*, whose private inclusion is governed by **Settings → Public profile → "Include private contributions on my profile"** and is reliably included by a **classic** token. A fine-grained token can under-report private contributions there even though it lists private repos fine.
+
+### Two-token setup (recommended for private, fully read-only)
+
+There's no single *read-only* token that gives both private languages **and** the full private contribution count: private languages need a fine-grained (read-only) or classic `repo` token, while the contribution count needs a **classic** token. To get both without granting `repo` write access, use two tokens:
+
+| Secret | Token | Used for | Access |
+| --- | --- | --- | --- |
+| `GITHUB_TOKEN` | fine-grained (All repositories + Metadata/Contents read) | languages / repos | read-only |
+| `GITHUB_CONTRIB_TOKEN` | **classic, no scopes** | contribution count + stats | read-only |
+
+Because your "Include private contributions on my profile" setting is on, a classic **no-scope** token returns your full private-inclusive contribution count — so both tokens stay read-only, and no `repo` write scope is needed.
+
+```
+npx wrangler secret put GITHUB_TOKEN          # fine-grained (languages)
+npx wrangler secret put GITHUB_CONTRIB_TOKEN  # classic, no scopes (contributions)
+```
+
+If `GITHUB_CONTRIB_TOKEN` is unset, everything uses `GITHUB_TOKEN` (single-token mode).
 
 How it works internally: every fetch pulls **all** repos the token can see, each tagged with an `isPrivate` flag, and caches that superset in KV. The public/private filter is applied at **render time**, so toggling `include_private` never triggers a re-fetch — it recomputes from the cached data (see [Architecture](#architecture)).
 

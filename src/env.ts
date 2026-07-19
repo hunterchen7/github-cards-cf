@@ -3,8 +3,21 @@
 export interface Env {
   /** Persistent last-known-good cache (see src/cache/kv.ts). */
   CARDS_KV: KVNamespace;
-  /** GitHub PAT for reading public profile/repo data. Set via `wrangler secret put`. */
+  /**
+   * GitHub PAT used for the repos + commit-language datasets (the language cards).
+   * To include private repos this must be able to see them — a fine-grained token
+   * (All repositories + Metadata/Contents read) or a classic `repo` token.
+   */
   GITHUB_TOKEN: string;
+  /**
+   * Optional second PAT used ONLY for the profile dataset (contribution count +
+   * stats). Lets you use a **classic** token here (fine-grained tokens under-count
+   * private contributions in the calendar) while keeping a read-only fine-grained
+   * token for the languages. With "Include private contributions on my profile"
+   * enabled, a classic token with NO scopes returns the full private-inclusive
+   * count — so this can be fully read-only. Falls back to GITHUB_TOKEN if unset.
+   */
+  GITHUB_CONTRIB_TOKEN?: string;
 
   // Optional tunables (strings, from wrangler.toml [vars]).
   CACHE_FRESH_SECONDS?: string;

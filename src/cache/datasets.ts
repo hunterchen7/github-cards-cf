@@ -15,8 +15,11 @@ function key(dataset: string, username: string): string {
 
 export function getProfile(env: Env, username: string): Promise<CacheResult<ProfileData>> {
   const cfg = readConfig(env);
+  // Profile/contribution data can use a dedicated (classic) token; falls back to
+  // the main token. See GITHUB_CONTRIB_TOKEN in env.ts.
+  const token = env.GITHUB_CONTRIB_TOKEN || env.GITHUB_TOKEN;
   return withKvCache(env.CARDS_KV, key('profile', username), cfg.cacheFreshSeconds, () =>
-    fetchProfileData(username, env.GITHUB_TOKEN),
+    fetchProfileData(username, token),
   );
 }
 
