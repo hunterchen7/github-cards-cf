@@ -83,9 +83,12 @@ request ──► edge Cache API (keyed on full URL, incl. theme/params)
 ```
 
 - **Cache key is per username, not per theme/params.** Themes and filters only affect rendering, so one cached blob serves every theme and option.
-- **Freshness vs retention.** A blob is "fresh" for `CACHE_FRESH_SECONDS` (default 6h). It is retained in KV for 30 days, so last-known-good survives a long outage.
+- **Freshness vs retention.** A blob is "fresh" for `CACHE_FRESH_SECONDS` (default **1h**): any access within the window is served straight from KV and GitHub is not touched. After the window the next request refetches. The blob is retained in KV for 30 days, so last-known-good survives a long outage.
 - **No Durable Objects.** A read-heavy cached card needs no coordination or strong consistency; KV + the edge Cache API are the right fit.
-- The `X-Cache-Source` response header reports `fresh-kv`, `network`, or `stale-kv`.
+- **Observability headers** on every card response:
+  - `X-Cache-Source` — `fresh-kv` (served from KV, no GitHub), `network` (just fetched from GitHub), or `stale-kv` (GitHub down, served last-known-good).
+  - `X-Data-Age` — seconds since the data was fetched from GitHub (climbs to `CACHE_FRESH_SECONDS`, then resets on refetch).
+  - `X-Edge-Cache` — `HIT` when the Cloudflare edge served the SVG without running the worker, else `MISS`.
 
 ## Setup
 
@@ -151,9 +154,9 @@ Set these in `wrangler.toml` under `[vars]`:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `CACHE_FRESH_SECONDS` | `21600` | how long a KV blob is fresh before a refetch is attempted |
-| `BROWSER_CACHE_SECONDS` | `14400` | `max-age` sent to the browser / GitHub camo proxy |
-| `EDGE_CACHE_SECONDS` | `14400` | edge Cache API TTL (`s-maxage`) |
+| `CACHE_FRESH_SECONDS` | `3600` (1h) | how long a KV blob is fresh before a refetch is attempted |
+| `BROWSER_CACHE_SECONDS` | `3600` (1h) | `max-age` sent to the browser / GitHub camo proxy |
+| `EDGE_CACHE_SECONDS` | `3600` (1h) | edge Cache API TTL (`s-maxage`) |
 | `EXCLUDE_REPO` | — | optional comma list of repos to exclude globally |
 
 ## License
