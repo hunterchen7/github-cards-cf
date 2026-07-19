@@ -3,12 +3,12 @@
 // the requested embed are implemented; pie/donut/donut-vertical fall back to
 // normal. Aggregation consumes the shared repos dataset (languages by size).
 
-import { Card } from './card.js';
-import { getCardColors } from './color.js';
-import { formatBytes } from './fmt.js';
-import { chunkArray, clampValue, lowercaseTrim } from './ops.js';
-import { createProgressNode, flexLayout, measureText } from './render.js';
-import type { RepoNode } from '../github/repos.js';
+import { Card } from './card';
+import { getCardColors } from './color';
+import { formatBytes } from './fmt';
+import { chunkArray, clampValue, lowercaseTrim } from './ops';
+import { createProgressNode, flexLayout, measureText } from './render';
+import type { RepoNode } from '../github/repos';
 
 export interface Lang {
   name: string;
@@ -107,10 +107,11 @@ export function aggregateTopLanguages(
 // --- layout helpers ---
 
 const getLongestLang = (arr: Lang[]): Lang =>
-  arr.reduce((saved, lang) => (lang.name.length > saved.name.length ? lang : saved), {
+  arr.reduce<Lang>((saved, lang) => (lang.name.length > saved.name.length ? lang : saved), {
     name: '',
     size: 0,
     color: '',
+    count: 0,
   });
 
 const calculateCompactLayoutHeight = (totalLangs: number): number =>

@@ -2,9 +2,9 @@
 // src/common/Card.js minus the `process.env.NODE_ENV` gate (animations are always
 // emitted here) and the unused title-prefix-icon path.
 
-import { encodeHTML } from './ops.js';
-import { flexLayout } from './render.js';
-import type { CardColors } from './color.js';
+import { encodeHTML } from './ops';
+import { flexLayout } from './render';
+import type { CardColors } from './color';
 
 export interface CardArgs {
   width?: number;

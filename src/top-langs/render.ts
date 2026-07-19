@@ -1,5 +1,5 @@
 // Layout + measurement helpers ported from github-readme-stats' src/common/render.js.
-import { clampValue } from './ops.js';
+import { clampValue } from './ops';
 
 export interface FlexLayoutProps {
   items: string[];
