@@ -16,6 +16,7 @@
 name = "github-cards-cf"
 main = "src/index.ts"
 compatibility_date = "2024-11-06"
+account_id = "e279bdf8038be9bfccc6dda153c9ac71"
 
 # Tunables (non-secret). Overridable per-environment.
 [vars]
@@ -32,8 +33,7 @@ EDGE_CACHE_SECONDS = "14400"
 # command above and paste the id here. `preview_id` is used by `wrangler dev`.
 [[kv_namespaces]]
 binding = "CARDS_KV"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
-# preview_id = "REPLACE_WITH_KV_PREVIEW_ID"
+id = "9da821a524364355a99105821aac126f"
 
 [observability]
 enabled = true

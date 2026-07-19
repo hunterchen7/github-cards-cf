@@ -21,14 +21,14 @@ The public instances of these projects go down or rate-limit, and the card in yo
 | `/api/cards/stats` | total stars, commits, PRs, issues, contributed-to |
 | `/api/cards/repos-per-language` | donut of repositories grouped by primary language |
 | `/api/cards/most-commit-language` | donut of languages by commit count |
-| `/api/top-langs` | "Most Used Languages" — compact stacked bar + legend |
+| `/api/top-langs` | "Most Used Languages" — `compact` / `normal` / `pie` / `donut` / `donut-vertical` |
 
 ### Example embed
 
 ```html
-<img width="600" src="https://YOUR-WORKER.workers.dev/api/cards/profile-details?username=hunterchen7&theme=github_dark" />
+<img width="600" src="https://github-cards-cf.hunterchen.workers.dev/api/cards/profile-details?username=hunterchen7&theme=github_dark" />
 
-<img src="https://YOUR-WORKER.workers.dev/api/top-langs?username=hunterchen7&layout=compact&hide_border=false&bg_color=0D1116&border_color=2E353A&title_color=0267D6&text_color=0267D6&hide=jupyter%20notebook,TeX,css,scss,HTML,javascript,html" />
+<img src="https://github-cards-cf.hunterchen.workers.dev/api/top-langs?username=hunterchen7&layout=compact&hide_border=false&bg_color=0D1116&border_color=2E353A&title_color=0267D6&text_color=0267D6&hide=jupyter%20notebook,TeX,css,scss,HTML,javascript,html" />
 ```
 
 ## Query parameters

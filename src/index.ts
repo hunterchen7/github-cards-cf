@@ -170,7 +170,7 @@ const INDEX_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <li><code>/api/cards/most-commit-language?username=USER&amp;theme=github_dark</code></li>
 <li><code>/api/top-langs?username=USER&amp;layout=compact</code></li>
 </ul>
-<p>See the <a href="https://github.com/">README</a> for all query parameters.</p>
+<p>See the <a href="https://github.com/hunterchen7/github-cards-cf">README</a> for all query parameters.</p>
 </body></html>`;
 
 export default {
