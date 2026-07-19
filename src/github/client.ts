@@ -44,6 +44,25 @@ export function assertNoGraphQLErrors(
   }
 }
 
+// Throw ONLY for rate-limit / resource-limit errors (always fatal). Other
+// field-level errors (e.g. INSUFFICIENT_SCOPES on an optional field like
+// `user.email` when the token lacks read:user) are left for the caller to
+// tolerate, since GitHub still returns usable partial `data`.
+function assertNoLimitErrors(body: GraphQLResponse<unknown>): void {
+  const errors = body?.errors;
+  if (!Array.isArray(errors) || errors.length === 0) return;
+  if (errors.some((e) => e?.type === 'RATE_LIMITED' || /rate limit/i.test(e?.message ?? ''))) {
+    const err: GraphQLError = new Error(errors[0].message || 'GitHub rate limited');
+    err.isRateLimit = true;
+    throw err;
+  }
+  if (errors.some((e) => /resource limits/i.test(e?.message ?? ''))) {
+    const err: GraphQLError = new Error(errors[0].message || 'GitHub resource limit exceeded');
+    err.isResourceLimit = true;
+    throw err;
+  }
+}
+
 // ---- per-isolate concurrency gate ----
 const MAX_CONCURRENT_GITHUB_CALLS = 8;
 let activeGithubCalls = 0;
@@ -77,10 +96,17 @@ function isRetriableStatus(status: number): boolean {
  * backoff. GraphQL-level errors are surfaced via assertNoGraphQLErrors so a
  * rate-limit body doesn't get mistaken for a successful (empty) response.
  */
+export interface GraphQLOptions {
+  // When true, accept usable partial `data` even if some fields errored (e.g. a
+  // no-scope token can't read `user.email`). Rate/resource-limit errors still throw.
+  tolerateFieldErrors?: boolean;
+}
+
 export async function githubGraphQL<T>(
   token: string,
   query: string,
   variables: Record<string, unknown>,
+  opts: GraphQLOptions = {},
 ): Promise<T> {
   await acquireSlot();
   try {
@@ -115,6 +141,12 @@ export async function githubGraphQL<T>(
         }
 
         const body = (await res.json()) as GraphQLResponse<T>;
+        if (opts.tolerateFieldErrors) {
+          // Rate/resource limits are still fatal; other field errors are OK as
+          // long as GitHub returned usable data.
+          assertNoLimitErrors(body);
+          if (body.data) return body.data;
+        }
         assertNoGraphQLErrors(body, 'GitHub GraphQL request failed');
         if (!body.data) {
           throw new Error('GitHub GraphQL response missing data');
@@ -122,15 +154,13 @@ export async function githubGraphQL<T>(
         return body.data;
       } catch (err) {
         lastError = err;
-        // Rate-limit / resource-limit GraphQL errors are not worth blindly
-        // retrying on the same query — surface them to the caller immediately.
-        if ((err as GraphQLError).isRateLimit || (err as GraphQLError).isResourceLimit) {
-          throw err;
-        }
-        const isAbort = err instanceof Error && err.name === 'TimeoutError';
-        const isHttp = typeof (err as GraphQLError).status === 'number';
-        // Retry network errors and timeouts; don't retry non-retriable HTTP.
-        if (attempt < MAX_RETRIES && (isAbort || !isHttp)) {
+        // Only retry genuine transient client-side failures: request timeouts
+        // (AbortSignal.timeout -> TimeoutError) and network failures (fetch throws
+        // a TypeError). Deterministic errors — GraphQL rate/resource limits, field
+        // errors, bad scopes, HTTP 4xx — won't change on retry, so surface them now.
+        const isTimeout = err instanceof Error && err.name === 'TimeoutError';
+        const isNetwork = err instanceof TypeError;
+        if (attempt < MAX_RETRIES && (isTimeout || isNetwork)) {
           await sleep(RETRY_BASE_DELAY_MS * (attempt + 1));
           continue;
         }

@@ -105,7 +105,7 @@ You need a Cloudflare account and Node.js 20+.
 
 3. Copy the returned `id` into `wrangler.toml`, at `[[kv_namespaces]]` → `id`.
 
-4. Add a GitHub token as a secret. Use a classic token with `read:user` and `public_repo`, or a fine-grained token with read access to public profile and repositories. The Worker reads only public data.
+4. Add a GitHub token as a secret. GitHub's GraphQL API requires authentication even for public data, so **any valid classic PAT works — no scopes needed**. Add the `read:user` scope only if you want the email row on the profile-details card (that one field is scope-gated by GitHub even though it's public). The Worker reads only public data.
 
    ```
    npx wrangler secret put GITHUB_TOKEN

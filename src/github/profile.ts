@@ -180,9 +180,15 @@ async function contributionTotals(
 
 /** Fetch the full profile dataset from GitHub (no caching — the caller caches). */
 export async function fetchProfileData(username: string, token: string): Promise<ProfileData> {
-  const data = await githubGraphQL<UserDetailsResponse>(token, USER_DETAILS_QUERY, {
-    login: username,
-  });
+  // tolerateFieldErrors: a token without read:user can't read `user.email`;
+  // GitHub still returns the rest, so render the card (email row just omitted)
+  // instead of failing the whole request.
+  const data = await githubGraphQL<UserDetailsResponse>(
+    token,
+    USER_DETAILS_QUERY,
+    { login: username },
+    { tolerateFieldErrors: true },
+  );
   const user = data.user;
   if (!user) {
     throw new Error(`GitHub user "${username}" not found`);

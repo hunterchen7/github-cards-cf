@@ -1,5 +1,6 @@
 # Copy to `.dev.vars` (gitignored) for local `wrangler dev`.
 # A GitHub Personal Access Token used to read PUBLIC profile/repo data.
-#   - Classic token scopes: read:user, public_repo
-#   - or a fine-grained token with read-only access to public repositories + profile
+# GitHub's GraphQL API requires auth even for public data, so ANY valid classic
+# PAT works (no scopes needed). Add `read:user` only if you want the email row on
+# the profile-details card.
 GITHUB_TOKEN="ghp_your_token_here"
