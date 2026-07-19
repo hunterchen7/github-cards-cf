@@ -27,7 +27,10 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 
 // Throw on any GraphQL `errors` entry, flagging rate-limit and resource-limit
 // failures so callers can react (serve stale / retry with a cheaper query).
-export function assertNoGraphQLErrors(body: GraphQLResponse<unknown>, fallbackMessage: string): void {
+export function assertNoGraphQLErrors(
+  body: GraphQLResponse<unknown>,
+  fallbackMessage: string,
+): void {
   const errors = body?.errors;
   if (Array.isArray(errors) && errors.length > 0) {
     const err: GraphQLError = new Error(errors[0].message || fallbackMessage);
@@ -99,9 +102,10 @@ export async function githubGraphQL<T>(
         if (!res.ok) {
           if (isRetriableStatus(res.status) && attempt < MAX_RETRIES) {
             const retryAfter = Number(res.headers.get('retry-after'));
-            const delay = Number.isFinite(retryAfter) && retryAfter > 0
-              ? Math.min(retryAfter * 1000, 5000)
-              : RETRY_BASE_DELAY_MS * (attempt + 1);
+            const delay =
+              Number.isFinite(retryAfter) && retryAfter > 0
+                ? Math.min(retryAfter * 1000, 5000)
+                : RETRY_BASE_DELAY_MS * (attempt + 1);
             await sleep(delay);
             continue;
           }

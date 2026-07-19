@@ -108,10 +108,40 @@ export const REPOS_FIXTURE: RepoNode[] = [
 ];
 
 export const COMMIT_LANGS_FIXTURE: CommitRepoNode[] = [
-  { name: 'ts-lib', nameWithOwner: 'hunterchen7/ts-lib', primaryLanguage: { name: 'TypeScript', color: '#3178c6' }, totalCount: 2100 },
-  { name: 'ts-app', nameWithOwner: 'hunterchen7/ts-app', primaryLanguage: { name: 'TypeScript', color: '#3178c6' }, totalCount: 1100 },
-  { name: 'py-tool', nameWithOwner: 'hunterchen7/py-tool', primaryLanguage: { name: 'Python', color: '#3572A5' }, totalCount: 1400 },
-  { name: 'rust-cli', nameWithOwner: 'hunterchen7/rust-cli', primaryLanguage: { name: 'Rust', color: '#dea584' }, totalCount: 600 },
-  { name: 'kotlin-app', nameWithOwner: 'hunterchen7/kotlin-app', primaryLanguage: { name: 'Kotlin', color: '#A97BFF' }, totalCount: 120 },
-  { name: 'go-svc', nameWithOwner: 'hunterchen7/go-svc', primaryLanguage: { name: 'Go', color: '#00ADD8' }, totalCount: 80 },
+  {
+    name: 'ts-lib',
+    nameWithOwner: 'hunterchen7/ts-lib',
+    primaryLanguage: { name: 'TypeScript', color: '#3178c6' },
+    totalCount: 2100,
+  },
+  {
+    name: 'ts-app',
+    nameWithOwner: 'hunterchen7/ts-app',
+    primaryLanguage: { name: 'TypeScript', color: '#3178c6' },
+    totalCount: 1100,
+  },
+  {
+    name: 'py-tool',
+    nameWithOwner: 'hunterchen7/py-tool',
+    primaryLanguage: { name: 'Python', color: '#3572A5' },
+    totalCount: 1400,
+  },
+  {
+    name: 'rust-cli',
+    nameWithOwner: 'hunterchen7/rust-cli',
+    primaryLanguage: { name: 'Rust', color: '#dea584' },
+    totalCount: 600,
+  },
+  {
+    name: 'kotlin-app',
+    nameWithOwner: 'hunterchen7/kotlin-app',
+    primaryLanguage: { name: 'Kotlin', color: '#A97BFF' },
+    totalCount: 120,
+  },
+  {
+    name: 'go-svc',
+    nameWithOwner: 'hunterchen7/go-svc',
+    primaryLanguage: { name: 'Go', color: '#00ADD8' },
+    totalCount: 80,
+  },
 ];

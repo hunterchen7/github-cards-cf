@@ -4,7 +4,11 @@ import { renderProfileDetails } from './cards/profile-details';
 import { renderStats } from './cards/stats';
 import { renderReposPerLanguage } from './cards/repos-per-language';
 import { renderMostCommitLanguage } from './cards/most-commit-language';
-import { aggregateTopLanguages, renderTopLanguages, type TopLangOptions } from './top-langs/top-languages';
+import {
+  aggregateTopLanguages,
+  renderTopLanguages,
+  type TopLangOptions,
+} from './top-langs/top-languages';
 import { parseThemeColorOverride } from './themes/theme';
 import { parseExcludeLanguages } from './util/translator';
 import { parseArray, parseBoolean } from './top-langs/ops';

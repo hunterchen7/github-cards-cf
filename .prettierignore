@@ -1,0 +1,7 @@
+# Compact data tables — keep one-entry-per-line, don't let printWidth explode them
+src/themes/theme.ts
+src/const/icon.ts
+src/util/translator.ts
+node_modules
+dist
+.wrangler

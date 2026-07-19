@@ -18,7 +18,10 @@ function save(name: string, svg: string): string {
 
 describe('card rendering (github_dark)', () => {
   it('profile-details', () => {
-    const svg = save('profile-details', renderProfileDetails('hunterchen7', PROFILE_FIXTURE, 'github_dark'));
+    const svg = save(
+      'profile-details',
+      renderProfileDetails('hunterchen7', PROFILE_FIXTURE, 'github_dark'),
+    );
     expect(svg.startsWith('<svg')).toBe(true);
     expect(svg).toContain('width="700"');
     expect(svg).toContain('7.62k Contributions on GitHub');

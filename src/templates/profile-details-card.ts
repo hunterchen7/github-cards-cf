@@ -167,7 +167,9 @@ export function createDetailCard(
       `style="fill:${theme.text};font-size:10px">${escapeXml(chartCaption)}</text>`;
 
     const chartX = card.width - chartWidth - card.xPadding + 5; // 295
-    card.append(`<g transform="translate(${chartX},10)">${path}${xAxisSvg}${yAxisSvg}${caption}</g>`);
+    card.append(
+      `<g transform="translate(${chartX},10)">${path}${xAxisSvg}${yAxisSvg}${caption}</g>`,
+    );
   }
 
   return card.render();

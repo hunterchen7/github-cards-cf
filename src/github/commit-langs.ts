@@ -98,7 +98,10 @@ async function fetchYear(username: string, year: number, token: string): Promise
 }
 
 /** Fetch commit-language nodes across every contribution year. Caller caches. */
-export async function fetchCommitLangData(username: string, token: string): Promise<CommitRepoNode[]> {
+export async function fetchCommitLangData(
+  username: string,
+  token: string,
+): Promise<CommitRepoNode[]> {
   const yearsRes = await githubGraphQL<{
     user: { contributionsCollection: { contributionYears: number[] } } | null;
   }>(token, YEARS_QUERY, { login: username });

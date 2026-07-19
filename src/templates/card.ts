@@ -24,7 +24,14 @@ export class Card {
   private readonly theme: Theme;
   private readonly bodyParts: string[] = [];
 
-  constructor(title: string, width: number, height: number, theme: Theme, xPadding = 30, yPadding = 40) {
+  constructor(
+    title: string,
+    width: number,
+    height: number,
+    theme: Theme,
+    xPadding = 30,
+    yPadding = 40,
+  ) {
     this.title = title;
     this.width = width;
     this.height = height;

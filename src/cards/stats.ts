@@ -11,7 +11,12 @@ export function renderStats(
   hideLogo = false,
 ): string {
   const stats: StatRow[] = [
-    { index: 0, icon: Icon.STAR, name: 'Total Stars:', value: abbreviateNumber(profile.totalStars, 1) },
+    {
+      index: 0,
+      icon: Icon.STAR,
+      name: 'Total Stars:',
+      value: abbreviateNumber(profile.totalStars, 1),
+    },
     {
       index: 1,
       icon: Icon.COMMIT,
