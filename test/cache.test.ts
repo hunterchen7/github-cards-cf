@@ -24,7 +24,7 @@ describe('withKvCache (last-known-good)', () => {
     const kv = mockKv();
     const fetchFresh = vi.fn().mockResolvedValue({ v: 1 });
     const res = await withKvCache(kv, 'k', FRESH, fetchFresh, NOW);
-    expect(res).toEqual({ data: { v: 1 }, stale: false, source: 'network' });
+    expect(res).toEqual({ data: { v: 1 }, stale: false, source: 'network', ageSeconds: 0 });
     expect(fetchFresh).toHaveBeenCalledOnce();
     expect(JSON.parse(kv.store.get('k')!)).toEqual({ ts: NOW, data: { v: 1 } });
   });
@@ -33,7 +33,7 @@ describe('withKvCache (last-known-good)', () => {
     const kv = mockKv({ ts: NOW - 10_000, data: { v: 2 } }); // 10s old, within 1h
     const fetchFresh = vi.fn().mockResolvedValue({ v: 99 });
     const res = await withKvCache(kv, 'k', FRESH, fetchFresh, NOW);
-    expect(res).toEqual({ data: { v: 2 }, stale: false, source: 'fresh-kv' });
+    expect(res).toEqual({ data: { v: 2 }, stale: false, source: 'fresh-kv', ageSeconds: 10 });
     expect(fetchFresh).not.toHaveBeenCalled();
   });
 
@@ -41,7 +41,12 @@ describe('withKvCache (last-known-good)', () => {
     const kv = mockKv({ ts: NOW - 10 * FRESH * 1000, data: { v: 3 } }); // stale
     const fetchFresh = vi.fn().mockRejectedValue(new Error('GitHub 503'));
     const res = await withKvCache(kv, 'k', FRESH, fetchFresh, NOW);
-    expect(res).toEqual({ data: { v: 3 }, stale: true, source: 'stale-kv' });
+    expect(res).toEqual({
+      data: { v: 3 },
+      stale: true,
+      source: 'stale-kv',
+      ageSeconds: 10 * FRESH,
+    });
     expect(fetchFresh).toHaveBeenCalledOnce();
   });
 
@@ -49,7 +54,7 @@ describe('withKvCache (last-known-good)', () => {
     const kv = mockKv({ ts: NOW - 10 * FRESH * 1000, data: { v: 4 } });
     const fetchFresh = vi.fn().mockResolvedValue({ v: 5 });
     const res = await withKvCache(kv, 'k', FRESH, fetchFresh, NOW);
-    expect(res).toEqual({ data: { v: 5 }, stale: false, source: 'network' });
+    expect(res).toEqual({ data: { v: 5 }, stale: false, source: 'network', ageSeconds: 0 });
     expect(JSON.parse(kv.store.get('k')!).data).toEqual({ v: 5 });
   });
 

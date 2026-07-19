@@ -28,6 +28,7 @@ class BadRequestError extends Error {}
 interface RenderResult {
   svg: string;
   source: string; // fresh-kv | network | stale-kv | n/a
+  ageSeconds: number; // seconds since the data was fetched from GitHub
 }
 
 function requireUsername(params: URLSearchParams): string {
@@ -62,6 +63,7 @@ async function renderSummaryCard(card: string, url: URL, env: Env): Promise<Rend
     return {
       svg: animate(renderProfileDetails(username, res.data, themeName, override, displayName)),
       source: res.source,
+      ageSeconds: res.ageSeconds,
     };
   }
   if (card === 'stats') {
@@ -70,6 +72,7 @@ async function renderSummaryCard(card: string, url: URL, env: Env): Promise<Rend
     return {
       svg: animate(renderStats(res.data, themeName, override, hideLogo)),
       source: res.source,
+      ageSeconds: res.ageSeconds,
     };
   }
 
@@ -82,6 +85,7 @@ async function renderSummaryCard(card: string, url: URL, env: Env): Promise<Rend
     return {
       svg: animate(renderReposPerLanguage(res.data, exclude, excludeRepos, themeName, override)),
       source: res.source,
+      ageSeconds: res.ageSeconds,
     };
   }
   // most-commit-language
@@ -125,18 +129,26 @@ async function renderTopLangsCard(url: URL, env: Env): Promise<RenderResult> {
   const excludeRepo = parseArray(params.get('exclude_repo'));
   const res = await getRepos(env, username);
   const topLangs = aggregateTopLanguages(res.data, excludeRepo);
-  return { svg: renderTopLanguages(topLangs, parseTopLangsOptions(params)), source: res.source };
+  return {
+    svg: renderTopLanguages(topLangs, parseTopLangsOptions(params)),
+    source: res.source,
+    ageSeconds: res.ageSeconds,
+  };
 }
 
-function svgResponse(svg: string, source: string, env: Env): Response {
+function svgResponse(result: RenderResult, env: Env): Response {
   const cfg = readConfig(env);
-  return new Response(svg, {
+  return new Response(result.svg, {
     status: 200,
     headers: {
       'Content-Type': 'image/svg+xml; charset=utf-8',
       'Cache-Control': `public, max-age=${cfg.browserCacheSeconds}, s-maxage=${cfg.edgeCacheSeconds}`,
       'Access-Control-Allow-Origin': '*',
-      'X-Cache-Source': source,
+      // Observability: where the data came from, how old it is (seconds since the
+      // GitHub fetch), and whether this response came from the edge Cache API.
+      'X-Cache-Source': result.source,
+      'X-Data-Age': String(result.ageSeconds),
+      'X-Edge-Cache': 'MISS',
     },
   });
 }
@@ -190,11 +202,17 @@ export default {
       return new Response(null, { status: 204 });
     }
 
-    // Edge cache: key on the full URL (theme/params included).
+    // Edge cache: key on the full URL (theme/params included). On a hit the worker
+    // does no GitHub/KV work at all — the stored SVG is returned straight from the
+    // Cloudflare edge. Re-label it so probes can see it was an edge hit.
     const cache = caches.default;
     const cacheKey = new Request(url.toString(), { method: 'GET' });
     const hit = await cache.match(cacheKey);
-    if (hit) return hit;
+    if (hit) {
+      const edgeHit = new Response(hit.body, hit);
+      edgeHit.headers.set('X-Edge-Cache', 'HIT');
+      return edgeHit;
+    }
 
     const themeName = url.searchParams.get('theme') ?? 'default';
     let response: Response;
@@ -208,7 +226,7 @@ export default {
       } else {
         return new Response('Not Found', { status: 404 });
       }
-      response = svgResponse(result.svg, result.source, env);
+      response = svgResponse(result, env);
       // Cache successful (incl. served-stale) renders at the edge.
       ctx.waitUntil(cache.put(cacheKey, response.clone()));
     } catch (err) {

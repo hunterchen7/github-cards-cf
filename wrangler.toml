@@ -21,13 +21,14 @@ account_id = "e279bdf8038be9bfccc6dda153c9ac71"
 # Tunables (non-secret). Overridable per-environment.
 [vars]
 # How long a cached per-user data blob is considered "fresh" before we try to
-# refetch from GitHub (seconds). On refetch failure we still serve the stale
-# blob — that is the API-failure resilience. Default: 6 hours.
-CACHE_FRESH_SECONDS = "21600"
-# How long the browser / GitHub camo proxy may cache the rendered SVG (seconds).
-BROWSER_CACHE_SECONDS = "14400"
-# How long a rendered SVG lives in the Cloudflare edge Cache API (seconds).
-EDGE_CACHE_SECONDS = "14400"
+# refetch from GitHub (seconds). An access within this window is served straight
+# from KV — GitHub is not touched. On refetch failure we still serve the stale
+# blob (API-failure resilience). 1 hour.
+CACHE_FRESH_SECONDS = "3600"
+# How long the browser / GitHub camo proxy may cache the rendered SVG (seconds). 1 hour.
+BROWSER_CACHE_SECONDS = "3600"
+# How long a rendered SVG lives in the Cloudflare edge Cache API (seconds). 1 hour.
+EDGE_CACHE_SECONDS = "3600"
 
 # Persistent last-known-good cache. Run the `wrangler kv namespace create`
 # command above and paste the id here. `preview_id` is used by `wrangler dev`.

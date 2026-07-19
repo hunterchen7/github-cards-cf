@@ -18,6 +18,8 @@ export interface CacheResult<T> {
   stale: boolean;
   /** Where the data came from — useful for response headers / debugging. */
   source: 'fresh-kv' | 'network' | 'stale-kv';
+  /** Seconds since this data was fetched from GitHub (0 for a fresh network fetch). */
+  ageSeconds: number;
 }
 
 // How long a value is retained in KV after being written, so last-known-good
@@ -50,7 +52,12 @@ export async function withKvCache<T>(
   }
 
   if (cached && now - cached.ts < freshSeconds * 1000) {
-    return { data: cached.data, stale: false, source: 'fresh-kv' };
+    return {
+      data: cached.data,
+      stale: false,
+      source: 'fresh-kv',
+      ageSeconds: Math.round((now - cached.ts) / 1000),
+    };
   }
 
   try {
@@ -63,11 +70,16 @@ export async function withKvCache<T>(
     } catch {
       /* ignore write failures */
     }
-    return { data: fresh, stale: false, source: 'network' };
+    return { data: fresh, stale: false, source: 'network', ageSeconds: 0 };
   } catch (err) {
     if (cached) {
       // GitHub failed but we have a last-known-good value — the whole point.
-      return { data: cached.data, stale: true, source: 'stale-kv' };
+      return {
+        data: cached.data,
+        stale: true,
+        source: 'stale-kv',
+        ageSeconds: Math.round((now - cached.ts) / 1000),
+      };
     }
     throw err;
   }
