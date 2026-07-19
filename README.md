@@ -44,13 +44,15 @@ The public instances of these projects go down or rate-limit, and the card in yo
 | `hide_logo` | stats | `false` | hide the large GitHub logo |
 | `exclude` | language cards | — | comma list of languages to hide (aliases like `js`, `ts` are resolved) |
 | `exclude_repos` | language cards | — | comma list of repo names / `owner/repo` to skip |
+| `animation` | all | — | entrance animation: `fade`, `rise`, `draw`, `stagger`, `load`, `sequence`, `tint`, `rgb`, `rgb-soft` (pure CSS, camo-safe; respects `prefers-reduced-motion`) |
+| `duration` | all | preset default | animation speed in seconds (0.2–10) |
 
 ### Top languages (`/api/top-langs`)
 
 | Param | Default | Notes |
 | --- | --- | --- |
 | `username` | — | **required** |
-| `layout` | `normal` | `compact` for the stacked-bar layout; other values fall back to normal |
+| `layout` | `normal` | `compact`, `normal`, `pie`, `donut`, or `donut-vertical` |
 | `hide` | — | comma list of languages to hide |
 | `langs_count` | 6 (compact) / 5 (normal) | 1–20 |
 | `card_width` | 300 | min 280 |

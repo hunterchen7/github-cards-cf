@@ -12,6 +12,7 @@ import {
 import { parseThemeColorOverride } from './themes/theme';
 import { parseExcludeLanguages } from './util/translator';
 import { parseArray, parseBoolean } from './top-langs/ops';
+import { applyAnimation, parseAnimation } from './util/animation';
 import { errorCard } from './templates/error-card';
 
 const USERNAME_RE = /^[A-Za-z0-9-]{1,39}$/;
@@ -50,19 +51,26 @@ async function renderSummaryCard(card: string, url: URL, env: Env): Promise<Rend
   const themeName = params.get('theme') ?? 'default';
   const override = parseThemeColorOverride(params);
   const cfg = readConfig(env);
+  // Optional entrance animation (summary cards only).
+  const animation = parseAnimation(params.get('animation'));
+  const durationRaw = params.get('duration');
+  const animate = (svg: string): string => applyAnimation(svg, animation, durationRaw);
 
   if (card === 'profile-details') {
     const res = await getProfile(env, username);
     const displayName = params.get('name');
     return {
-      svg: renderProfileDetails(username, res.data, themeName, override, displayName),
+      svg: animate(renderProfileDetails(username, res.data, themeName, override, displayName)),
       source: res.source,
     };
   }
   if (card === 'stats') {
     const res = await getProfile(env, username);
     const hideLogo = parseBoolean(params.get('hide_logo')) === true;
-    return { svg: renderStats(res.data, themeName, override, hideLogo), source: res.source };
+    return {
+      svg: animate(renderStats(res.data, themeName, override, hideLogo)),
+      source: res.source,
+    };
   }
 
   // language cards
@@ -72,14 +80,14 @@ async function renderSummaryCard(card: string, url: URL, env: Env): Promise<Rend
   if (card === 'repos-per-language') {
     const res = await getRepos(env, username);
     return {
-      svg: renderReposPerLanguage(res.data, exclude, excludeRepos, themeName, override),
+      svg: animate(renderReposPerLanguage(res.data, exclude, excludeRepos, themeName, override)),
       source: res.source,
     };
   }
   // most-commit-language
   const res = await getCommitLangs(env, username);
   return {
-    svg: renderMostCommitLanguage(res.data, exclude, excludeRepos, themeName, override),
+    svg: animate(renderMostCommitLanguage(res.data, exclude, excludeRepos, themeName, override)),
     source: res.source,
   };
 }

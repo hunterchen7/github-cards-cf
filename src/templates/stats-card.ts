@@ -25,21 +25,22 @@ export function createStatsCard(
   const icons = stats
     .map(
       (d) =>
-        `<g transform="translate(0,${labelHeight * d.index * 1.8})" fill="${theme.icon}">${d.icon}</g>`,
+        `<g class="gpsc-item" style="--gpsc-i:${d.index}">` +
+        `<g transform="translate(0,${labelHeight * d.index * 1.8})" fill="${theme.icon}">${d.icon}</g></g>`,
     )
     .join('');
   const names = stats
     .map(
       (d) =>
         `<text x="${labelHeight * 1.5}" y="${labelHeight * d.index * 1.8 + labelHeight}" ` +
-        `style="fill:${theme.text};font-size:${labelHeight}px">${escapeXml(d.name)}</text>`,
+        `class="gpsc-item" style="--gpsc-i:${d.index};fill:${theme.text};font-size:${labelHeight}px">${escapeXml(d.name)}</text>`,
     )
     .join('');
   const values = stats
     .map(
       (d) =>
         `<text x="130" y="${labelHeight * d.index * 1.8 + labelHeight}" ` +
-        `style="fill:${theme.text};font-size:${labelHeight}px">${escapeXml(d.value)}</text>`,
+        `class="gpsc-item" style="--gpsc-i:${d.index};fill:${theme.text};font-size:${labelHeight}px">${escapeXml(d.value)}</text>`,
     )
     .join('');
 

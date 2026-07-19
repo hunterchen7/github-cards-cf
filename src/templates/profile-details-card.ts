@@ -113,17 +113,20 @@ export function createDetailCard(
   const labelHeight = 14;
 
   // --- detail rows (icon + value) ---
+  // Each row is an animatable `.gpsc-item`. The icon's SVG transform lives on an
+  // inner group so the transform-free wrapper can be CSS-transformed safely.
   const icons = userDetails
     .map(
       (d) =>
-        `<g transform="translate(0,${labelHeight * d.index * 2})" fill="${theme.icon}">${d.icon}</g>`,
+        `<g class="gpsc-item" style="--gpsc-i:${d.index}">` +
+        `<g transform="translate(0,${labelHeight * d.index * 2})" fill="${theme.icon}">${d.icon}</g></g>`,
     )
     .join('');
   const texts = userDetails
     .map(
       (d) =>
         `<text x="${labelHeight * 1.5}" y="${labelHeight * d.index * 2 + labelHeight}" ` +
-        `style="fill:${theme.text};font-size:${labelHeight}px">${escapeXml(d.value)}</text>`,
+        `class="gpsc-item" style="--gpsc-i:${d.index};fill:${theme.text};font-size:${labelHeight}px">${escapeXml(d.value)}</text>`,
     )
     .join('');
   card.append(`<g transform="translate(30,30)">${icons}${texts}</g>`);
@@ -157,9 +160,18 @@ export function createDetailCard(
 
     const titleIsTall = title.includes('\n') || title.length > 30;
 
+    // Inert reveal clip: full-size by default (no visual change); the draw/load/
+    // sequence animation presets wipe it in from the left so the area draws on.
+    const revealWidth = chartWidth + CHART_RIGHT_MARGIN;
+    const revealIdx = userDetails.length;
+    const clip =
+      `<clipPath id="gpsc-reveal-clip"><rect class="gpsc-reveal" x="${-CHART_RIGHT_MARGIN}" y="0" ` +
+      `width="${revealWidth}" height="${chartHeight}" ` +
+      `style="--gpsc-w:${revealWidth}px;--gpsc-i:${revealIdx}"/></clipPath>`;
     const path =
+      `<g clip-path="url(#gpsc-reveal-clip)" class="gpsc-chart" style="--gpsc-i:${revealIdx}">` +
       `<path transform="translate(${-CHART_RIGHT_MARGIN},0)" stroke="${theme.chart}" ` +
-      `fill="${theme.chart}" opacity="1" d="${valueline(monthly)}"/>`;
+      `fill="${theme.chart}" opacity="1" d="${valueline(monthly)}"/></g>`;
     const xAxisSvg = bottomAxis((d) => x(d), xTicks, xTickFmt, theme, chartWidth, chartHeight);
     const yAxisSvg = rightAxis((d) => y(d), yTicks, yTickFmt, theme, chartWidth, chartHeight);
     const caption =
@@ -168,7 +180,7 @@ export function createDetailCard(
 
     const chartX = card.width - chartWidth - card.xPadding + 5; // 295
     card.append(
-      `<g transform="translate(${chartX},10)">${path}${xAxisSvg}${yAxisSvg}${caption}</g>`,
+      `<g transform="translate(${chartX},10)">${clip}${path}${xAxisSvg}${yAxisSvg}${caption}</g>`,
     );
   }
 

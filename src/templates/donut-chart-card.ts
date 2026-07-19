@@ -33,11 +33,11 @@ export function createDonutChartCard(title: string, data: DonutDatum[], theme: T
       const rectY = labelHeight * d.index * 1.8 + card.height / 2 - radius - 12;
       const textY = labelHeight * d.index * 1.8 + card.height / 2 - radius;
       const rect =
-        `<rect y="${rectY}" width="${labelHeight}" height="${labelHeight}" ` +
-        `fill="${d.data.color}" stroke="${theme.background}" style="stroke-width:1px"/>`;
+        `<rect y="${rectY}" width="${labelHeight}" height="${labelHeight}" class="gpsc-item" ` +
+        `style="--gpsc-i:${d.index}" fill="${d.data.color}" stroke="${theme.background}" stroke-width="1px"/>`;
       const text =
-        `<text x="${labelHeight * 1.2}" y="${textY}" ` +
-        `style="fill:${theme.text};font-size:${labelHeight}px">${escapeXml(d.data.name)}</text>`;
+        `<text x="${labelHeight * 1.2}" y="${textY}" class="gpsc-item" ` +
+        `style="--gpsc-i:${d.index};fill:${theme.text};font-size:${labelHeight}px">${escapeXml(d.data.name)}</text>`;
       return rect + text;
     })
     .join('');
@@ -47,7 +47,7 @@ export function createDonutChartCard(title: string, data: DonutDatum[], theme: T
   const arcs = pieData
     .map(
       (d) =>
-        `<g class="arc"><path d="${arcGen(d)}" fill="${d.data.color}" ` +
+        `<g class="arc" style="--gpsc-i:${d.index}"><path d="${arcGen(d)}" fill="${d.data.color}" ` +
         `stroke="${theme.background}" style="stroke-width:2px"/></g>`,
     )
     .join('');

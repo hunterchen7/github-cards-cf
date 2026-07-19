@@ -70,8 +70,8 @@ export class Card {
       .map((line, i) => {
         const y = this.yPadding + i * TITLE_LINE_HEIGHT;
         return (
-          `<text x="${this.xPadding}" y="${y}" ` +
-          `style="font-size:22px;fill:${this.theme.title}">${escapeXml(line)}</text>`
+          `<text x="${this.xPadding}" y="${y}" class="gpsc-item" ` +
+          `style="--gpsc-i:${i};font-size:22px;fill:${this.theme.title}">${escapeXml(line)}</text>`
         );
       })
       .join('');
