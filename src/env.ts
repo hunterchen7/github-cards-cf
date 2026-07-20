@@ -32,6 +32,12 @@ export interface Env {
    * per-request with ?include_private=. Defaults to false.
    */
   INCLUDE_PRIVATE?: string;
+  /**
+   * Comma-separated usernames whose datasets the cron pre-warms, so the cards you
+   * actually embed are always served from a fresh cache and never pay for a
+   * GitHub refetch on the request path. Optional.
+   */
+  PREWARM_USERNAMES?: string;
 }
 
 const DEFAULTS = {
@@ -53,6 +59,17 @@ export interface Config {
   excludeRepositories: string[];
   /** Default for counting private repos in the language cards (see INCLUDE_PRIVATE). */
   includePrivate: boolean;
+  /** Usernames the cron keeps warm (see PREWARM_USERNAMES). */
+  prewarmUsernames: string[];
+}
+
+function csv(value: string | undefined): string[] {
+  return value
+    ? value
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean)
+    : [];
 }
 
 export function readConfig(env: Env): Config {
@@ -60,11 +77,8 @@ export function readConfig(env: Env): Config {
     cacheFreshSeconds: num(env.CACHE_FRESH_SECONDS, DEFAULTS.CACHE_FRESH_SECONDS),
     browserCacheSeconds: num(env.BROWSER_CACHE_SECONDS, DEFAULTS.BROWSER_CACHE_SECONDS),
     edgeCacheSeconds: num(env.EDGE_CACHE_SECONDS, DEFAULTS.EDGE_CACHE_SECONDS),
-    excludeRepositories: env.EXCLUDE_REPO
-      ? env.EXCLUDE_REPO.split(',')
-          .map((r) => r.trim().toLowerCase())
-          .filter(Boolean)
-      : [],
+    excludeRepositories: csv(env.EXCLUDE_REPO).map((r) => r.toLowerCase()),
     includePrivate: env.INCLUDE_PRIVATE === 'true',
+    prewarmUsernames: csv(env.PREWARM_USERNAMES),
   };
 }

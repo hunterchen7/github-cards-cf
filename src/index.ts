@@ -1,5 +1,11 @@
 import { readConfig, type Env } from './env';
-import { getProfile, getRepos, getCommitLangs } from './cache/datasets';
+import {
+  getProfile,
+  getRepos,
+  getCommitLangs,
+  prewarmDatasets,
+  type WaitUntil,
+} from './cache/datasets';
 import { renderProfileDetails } from './cards/profile-details';
 import { renderStats } from './cards/stats';
 import { renderReposPerLanguage } from './cards/repos-per-language';
@@ -46,7 +52,12 @@ function parseExcludeRepos(params: URLSearchParams, extra: string[]): string[] {
   return [...fromQuery, ...extra];
 }
 
-async function renderSummaryCard(card: string, url: URL, env: Env): Promise<RenderResult> {
+async function renderSummaryCard(
+  card: string,
+  url: URL,
+  env: Env,
+  waitUntil?: WaitUntil,
+): Promise<RenderResult> {
   const params = url.searchParams;
   const username = requireUsername(params);
   const themeName = params.get('theme') ?? 'default';
@@ -58,7 +69,7 @@ async function renderSummaryCard(card: string, url: URL, env: Env): Promise<Rend
   const animate = (svg: string): string => applyAnimation(svg, animation, durationRaw);
 
   if (card === 'profile-details') {
-    const res = await getProfile(env, username);
+    const res = await getProfile(env, username, waitUntil);
     const displayName = params.get('name');
     return {
       svg: animate(renderProfileDetails(username, res.data, themeName, override, displayName)),
@@ -67,7 +78,7 @@ async function renderSummaryCard(card: string, url: URL, env: Env): Promise<Rend
     };
   }
   if (card === 'stats') {
-    const res = await getProfile(env, username);
+    const res = await getProfile(env, username, waitUntil);
     const hideLogo = parseBoolean(params.get('hide_logo')) === true;
     return {
       svg: animate(renderStats(res.data, themeName, override, hideLogo)),
@@ -82,7 +93,7 @@ async function renderSummaryCard(card: string, url: URL, env: Env): Promise<Rend
   const includePrivate = parseBoolean(params.get('include_private')) ?? cfg.includePrivate;
 
   if (card === 'repos-per-language') {
-    const res = await getRepos(env, username);
+    const res = await getRepos(env, username, waitUntil);
     const repos = includePrivate ? res.data : res.data.filter((r) => !r.isPrivate);
     return {
       svg: animate(renderReposPerLanguage(repos, exclude, excludeRepos, themeName, override)),
@@ -91,7 +102,7 @@ async function renderSummaryCard(card: string, url: URL, env: Env): Promise<Rend
     };
   }
   // most-commit-language
-  const res = await getCommitLangs(env, username);
+  const res = await getCommitLangs(env, username, waitUntil);
   const nodes = includePrivate ? res.data : res.data.filter((n) => !n.isPrivate);
   return {
     svg: animate(renderMostCommitLanguage(nodes, exclude, excludeRepos, themeName, override)),
@@ -127,13 +138,17 @@ function parseTopLangsOptions(params: URLSearchParams): TopLangOptions {
   };
 }
 
-async function renderTopLangsCard(url: URL, env: Env): Promise<RenderResult> {
+async function renderTopLangsCard(
+  url: URL,
+  env: Env,
+  waitUntil?: WaitUntil,
+): Promise<RenderResult> {
   const params = url.searchParams;
   const username = requireUsername(params);
   const excludeRepo = parseArray(params.get('exclude_repo'));
   const includePrivate =
     parseBoolean(params.get('include_private')) ?? readConfig(env).includePrivate;
-  const res = await getRepos(env, username);
+  const res = await getRepos(env, username, waitUntil);
   const repos = includePrivate ? res.data : res.data.filter((r) => !r.isPrivate);
   const topLangs = aggregateTopLanguages(repos, excludeRepo);
   return {
@@ -143,13 +158,21 @@ async function renderTopLangsCard(url: URL, env: Env): Promise<RenderResult> {
   };
 }
 
+// A card served from stale data is being refreshed behind the response, so it is
+// cached only briefly — otherwise the edge would pin the old render for the full
+// TTL and the refreshed data wouldn't surface until it expired.
+const STALE_CACHE_SECONDS = 60;
+
 function svgResponse(result: RenderResult, env: Env): Response {
   const cfg = readConfig(env);
+  const isStale = result.source === 'stale-revalidating' || result.source === 'stale-kv';
+  const browserTtl = isStale ? STALE_CACHE_SECONDS : cfg.browserCacheSeconds;
+  const edgeTtl = isStale ? STALE_CACHE_SECONDS : cfg.edgeCacheSeconds;
   return new Response(result.svg, {
     status: 200,
     headers: {
       'Content-Type': 'image/svg+xml; charset=utf-8',
-      'Cache-Control': `public, max-age=${cfg.browserCacheSeconds}, s-maxage=${cfg.edgeCacheSeconds}`,
+      'Cache-Control': `public, max-age=${browserTtl}, s-maxage=${edgeTtl}`,
       'Access-Control-Allow-Origin': '*',
       // Observability: where the data came from, how old it is (seconds since the
       // GitHub fetch), and whether this response came from the edge Cache API.
@@ -226,10 +249,13 @@ export default {
     try {
       let result: RenderResult;
       const cardsMatch = url.pathname.match(/^\/api\/cards\/([a-z-]+)\/?$/);
+      // Lets the cache layer serve a stale value now and refresh after the
+      // response, so a request never blocks on a ~10s GitHub refetch.
+      const waitUntil: WaitUntil = (p) => ctx.waitUntil(p);
       if (cardsMatch && SUMMARY_CARDS.has(cardsMatch[1])) {
-        result = await renderSummaryCard(cardsMatch[1], url, env);
+        result = await renderSummaryCard(cardsMatch[1], url, env, waitUntil);
       } else if (url.pathname === '/api/top-langs' || url.pathname === '/api/top-langs/') {
-        result = await renderTopLangsCard(url, env);
+        result = await renderTopLangsCard(url, env, waitUntil);
       } else {
         return new Response('Not Found', { status: 404 });
       }
@@ -242,5 +268,18 @@ export default {
       response = errorResponse(message, status, themeName);
     }
     return response;
+  },
+
+  /**
+   * Cron pre-warmer. Refreshes the configured usernames' datasets before their
+   * fresh window lapses, so real traffic is always a fresh-KV hit and never pays
+   * for a GitHub refetch. Failures are swallowed — the last-known-good value
+   * stays in KV. Configure with PREWARM_USERNAMES in wrangler.toml.
+   */
+  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    const { prewarmUsernames } = readConfig(env);
+    ctx.waitUntil(
+      Promise.all(prewarmUsernames.map((u) => prewarmDatasets(env, u))).then(() => undefined),
+    );
   },
 };

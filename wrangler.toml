@@ -34,6 +34,14 @@ EDGE_CACHE_SECONDS = "3600"
 # can see them (a classic `repo` token — fine-grained tokens expose public repos
 # only to GraphQL). Override per-request with ?include_private=false|true.
 INCLUDE_PRIVATE = "true"
+# Usernames whose datasets the cron below refreshes ahead of expiry, so the cards
+# you actually embed are always a fresh-KV hit and never block on a GitHub fetch.
+PREWARM_USERNAMES = "hunterchen7"
+
+# Refresh the pre-warmed usernames every 30 min — comfortably inside the 1h fresh
+# window above, so a cached blob never gets a chance to go stale.
+[triggers]
+crons = ["*/30 * * * *"]
 
 # Persistent last-known-good cache. Run the `wrangler kv namespace create`
 # command above and paste the id here. `preview_id` is used by `wrangler dev`.
